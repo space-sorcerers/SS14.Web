@@ -1,0 +1,27 @@
+[21:51:18 INF IdentityServer4.Startup] Starting IdentityServer4 version 4.1.2+997a6cdd643e46cd5762b710c4ddc43574cbec2e
+[21:51:18 INF IdentityServer4.Startup] Using the default authentication scheme Identity.Application for IdentityServer
+[21:51:18 INF Microsoft.Hosting.Lifetime] Now listening on: https://localhost:5001
+[21:51:18 INF Microsoft.Hosting.Lifetime] Application started. Press Ctrl+C to shut down.
+[21:51:18 INF Microsoft.Hosting.Lifetime] Hosting environment: Development
+[21:51:18 INF Microsoft.Hosting.Lifetime] Content root path: D:\.sorcerers\SS14.Web\SS14.Web
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET / responded 200 in 211.3235 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /logo-long-auth-o.svg responded 200 in 12.2329 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /css/site.css responded 200 in 19.6336 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/jquery/dist/jquery.min.js responded 200 in 24.9407 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/bootstrap/dist/css/bootstrap.min.css responded 200 in 26.7280 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /js/site.js?v=4q1jwFhaPaZgr8WAUSrux6hAuh0XDg9kPS3xIVq36I0 responded 200 in 0.8888 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/bootstrap/dist/js/bootstrap.bundle.min.js responded 200 in 2.3984 ms to 127.0.0.1
+[23:00:20 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /stripeback.svg responded 200 in 0.8839 ms to 127.0.0.1
+[23:00:21 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /favicon.ico responded 200 in 1.8225 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /Identity/Account/Register responded 200 in 129.9935 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/bootstrap/dist/css/bootstrap.min.css responded 200 in 2.7170 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /css/site.css responded 200 in 0.7229 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /logo-long-auth-o.svg responded 200 in 0.9335 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/jquery/dist/jquery.min.js responded 200 in 2.1708 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/bootstrap/dist/js/bootstrap.bundle.min.js responded 200 in 1.1395 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /js/site.js?v=4q1jwFhaPaZgr8WAUSrux6hAuh0XDg9kPS3xIVq36I0 responded 200 in 0.8389 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/jquery-validation/dist/jquery.validate.min.js responded 200 in 1.3589 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js responded 200 in 0.9787 ms to 127.0.0.1
+[23:00:24 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /stripeback.svg responded 200 in 1.3454 ms to 127.0.0.1
+[23:00:30 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /Identity/Account/Login responded 200 in 43.5855 ms to 127.0.0.1
+[23:00:34 INF Serilog.AspNetCore.RequestLoggingMiddleware] HTTP GET /Identity/Account/Register responded 200 in 6.1002 ms to 127.0.0.1
