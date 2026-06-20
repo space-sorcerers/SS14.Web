@@ -22,4 +22,10 @@
       <ProjectReference Include="..\SS14.ServerHub.Shared\SS14.ServerHub.Shared.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="appsettings*.yml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

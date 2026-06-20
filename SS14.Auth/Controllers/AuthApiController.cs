@@ -88,20 +88,38 @@ public class AuthApiController : ControllerBase
             }, AuthenticateDenyResponseCode.AccountUnconfirmed));
         }
 
-        var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
+        // Try legacy TOTP password first (for OAuth-only users with no regular password)
+        var legacyPassKey = user.LegacyPassKey;
+        var isLegacyTotp = !string.IsNullOrEmpty(legacyPassKey) &&
+                           TotpHelper.ValidateCode(legacyPassKey, request.Password);
 
-        if (signInResult is SpaceSignInResult { IsAdminLocked: true })
+        if (!isLegacyTotp)
         {
-            return Unauthorized(new AuthenticateDenyResponse(
-                new[] { "Account locked by administrator." },
-                AuthenticateDenyResponseCode.AccountLocked));
+            var signInResult = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
+
+            if (signInResult is SpaceSignInResult { IsAdminLocked: true })
+            {
+                return Unauthorized(new AuthenticateDenyResponse(
+                    new[] { "Account locked by administrator." },
+                    AuthenticateDenyResponseCode.AccountLocked));
+            }
+
+            if (!signInResult.Succeeded)
+            {
+                return Unauthorized(new AuthenticateDenyResponse(
+                    new[] { "Invalid login credentials." },
+                    AuthenticateDenyResponseCode.InvalidCredentials));
+            }
         }
-
-        if (!signInResult.Succeeded)
+        else
         {
-            return Unauthorized(new AuthenticateDenyResponse(
-                new[] { "Invalid login credentials." },
-                AuthenticateDenyResponseCode.InvalidCredentials));
+            // TOTP code valid, skip regular password check but still check admin lock
+            if (user.AdminLocked)
+            {
+                return Unauthorized(new AuthenticateDenyResponse(
+                    new[] { "Account locked by administrator." },
+                    AuthenticateDenyResponseCode.AccountLocked));
+            }
         }
 
         if (user.TwoFactorEnabled)

@@ -82,53 +82,16 @@ public class RegisterModel : PageModel
         public bool AgeCheck { get; set; }
     }
 
-    public async Task OnGetAsync(string returnUrl = null)
+    public async Task<IActionResult> OnGetAsync(string returnUrl = null)
     {
-        ReturnUrl = returnUrl;
-        ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+        // Redirect to login - we only support OAuth registration
+        return RedirectToPage("./Login", new { returnUrl });
     }
 
     public async Task<IActionResult> OnPostAsync(string returnUrl = null)
     {
-        var userName = Input.Username.Trim();
-        var email = Input.Email.Trim();
-
-        returnUrl ??= Url.Content("~/");
-        ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-        if (!ModelState.IsValid)
-            return Page();
-
-        if (!await _hCaptcha.ValidateHCaptcha(HCaptchaResponse, ModelState))
-            return Page();
-
-        var user = ModelShared.CreateNewUser(userName, email, _systemClock);
-        var result = await _userManager.CreateAsync(user, Input.Password);
-        if (result.Succeeded)
-        {
-            _logger.LogInformation("User created a new account with password.");
-
-            var confirmLink = await GenerateEmailConfirmLink(user, returnUrl);
-
-            await ModelShared.SendConfirmEmail(_emailSender, email, confirmLink);
-
-            if (_userManager.Options.SignIn.RequireConfirmedAccount)
-            {
-                return RedirectToPage("RegisterConfirmation", new { email = email, returnUrl = returnUrl });
-            }
-            else
-            {
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return LocalRedirect(returnUrl);
-            }
-        }
-
-        foreach (var error in result.Errors)
-        {
-            ModelState.AddModelError(string.Empty, error.Description);
-        }
-
-        // If we got this far, something failed, redisplay form
-        return Page();
+        // Redirect to login - we only support OAuth registration
+        return RedirectToPage("./Login", new { returnUrl });
     }
 
     public async Task<string> GenerateEmailConfirmLink(

@@ -5,6 +5,7 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea/
 /*.sln.DotSettings.user
+temp/
 
 */appsettings.Secret.yml
 */tempkey.jwk

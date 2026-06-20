@@ -19,5 +19,10 @@
         <PackageReference Include="Quartz.Extensions.Hosting" Version="3.9.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="appsettings*.yml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
 
 </Project>

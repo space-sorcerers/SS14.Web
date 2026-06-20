@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -93,6 +95,17 @@ public class ExternalLoginsModel : PageModel
             throw new InvalidOperationException($"Unexpected error occurred loading external login info for user with ID '{user.Id}'.");
         }
 
+        // Update birthday from VK/Yandex if available
+        if (info.LoginProvider is "VK" or "Yandex")
+        {
+            var birthday = ExtractBirthdayFromClaims(info.Principal);
+            if (birthday.HasValue && birthday.Value != user.Birthday)
+            {
+                user.Birthday = birthday.Value;
+                await _userManager.UpdateAsync(user);
+            }
+        }
+
         var result = await _userManager.AddLoginAsync(user, info);
         if (!result.Succeeded)
         {
@@ -105,5 +118,41 @@ public class ExternalLoginsModel : PageModel
 
         StatusMessage = "The external login was added.";
         return RedirectToPage();
+    }
+
+    private DateTime? ExtractBirthdayFromClaims(ClaimsPrincipal principal)
+    {
+        var bdayClaim = principal.FindFirstValue(ClaimTypes.DateOfBirth);
+        if (string.IsNullOrEmpty(bdayClaim))
+            return null;
+
+        // Try various date formats
+        // VK format: "d.M.yyyy" (e.g., "15.6.1990")
+        // Yandex format: "yyyy-MM-dd" (e.g., "1990-06-15")
+        
+        string[] formats = new[]
+        {
+            "yyyy-MM-dd",
+            "d.M.yyyy",
+            "dd.MM.yyyy",
+            "M/d/yyyy",
+            "MM/dd/yyyy"
+        };
+
+        foreach (var format in formats)
+        {
+            if (DateTime.TryParseExact(bdayClaim, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            {
+                return DateTime.SpecifyKind(date, DateTimeKind.Utc);
+            }
+        }
+
+        // Fallback: try generic parse
+        if (DateTime.TryParse(bdayClaim, out var genericDate))
+        {
+            return DateTime.SpecifyKind(genericDate, DateTimeKind.Utc);
+        }
+
+        return null;
     }
 }

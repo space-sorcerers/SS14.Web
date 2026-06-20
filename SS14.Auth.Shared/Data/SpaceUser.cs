@@ -32,6 +32,17 @@ public class SpaceUser : IdentityUser<Guid>
     /// </summary>
     public DateTime? LastUsernameChange { get; set; }
 
+    /// <summary>
+    /// Date of birth. DateTime(1000, 1, 1) means no birthday set (legacy users).
+    /// </summary>
+    public DateTime Birthday { get; set; } = new DateTime(1000, 1, 1);
+
+    /// <summary>
+    /// Legacy TOTP secret for generating temporary passwords for the old launcher.
+    /// Base32-encoded random bytes. Null means not set up yet.
+    /// </summary>
+    public string LegacyPassKey { get; set; } = null!;
+
     public List<LoginSession> LoginSessions { get; set; } = new List<LoginSession>();
     public List<AuthHash> AuthHashes { get; set; } = new List<AuthHash>();
 

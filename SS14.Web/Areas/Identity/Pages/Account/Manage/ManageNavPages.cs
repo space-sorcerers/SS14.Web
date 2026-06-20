@@ -18,6 +18,7 @@ public static class ManageNavPages
     public const string TwoFactorAuthentication = "TwoFactorAuthentication";
     public const string ManagePatreon = "ManagePatreon";
     public const string Developer = "Developer";
+    public const string SetPassword = "SetPassword";
 
     public static string IndexNavClass(ViewContext viewContext)
         => PageNavClass(viewContext, Index);
@@ -45,6 +46,7 @@ public static class ManageNavPages
 
     public static string PatreonNavClass(ViewContext viewContext) => PageNavClass(viewContext, ManagePatreon);
     public static string DeveloperNavClass(ViewContext viewContext) => PageNavClass(viewContext, Developer);
+    public static string SetPasswordNavClass(ViewContext viewContext) => PageNavClass(viewContext, SetPassword);
 
     private static string PageNavClass(ViewContext viewContext, string page)
     {

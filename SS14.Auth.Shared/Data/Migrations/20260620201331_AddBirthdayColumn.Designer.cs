@@ -4,6 +4,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SS14.Auth.Shared.Data;
@@ -13,13 +14,14 @@ using SS14.Auth.Shared.Data;
 namespace SS14.Auth.Shared.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260620201331_AddBirthdayColumn")]
+    partial class AddBirthdayColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "6.0.1")
+                .HasAnnotation("ProductVersion", "6.0.36")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1091,7 +1093,7 @@ namespace SS14.Auth.Shared.Data.Migrations
                     b.Property<DateTime>("DeletedOn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValue(new DateTime(2026, 6, 20, 20, 52, 39, 821, DateTimeKind.Utc).AddTicks(9));
+                        .HasDefaultValue(new DateTime(2026, 6, 20, 20, 13, 31, 69, DateTimeKind.Utc).AddTicks(9639));
 
                     b.HasKey("SpaceUserId");
 
@@ -1317,9 +1319,6 @@ namespace SS14.Auth.Shared.Data.Migrations
 
                     b.Property<DateTime?>("LastUsernameChange")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("LegacyPassKey")
-                        .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)

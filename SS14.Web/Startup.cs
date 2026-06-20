@@ -1,7 +1,10 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.Threading.Tasks;
 using IdentityServer4;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore.Builder;
@@ -122,6 +125,48 @@ public class Startup
                     {
                         var handler = context.HttpContext.RequestServices.GetService<PatreonConnectionHandler>();
                         return handler!.HookReceivedTicket(context);
+                    };
+                });
+        }
+
+        // VK OAuth
+        var vkSection = Configuration.GetSection("Vkontakte");
+        var vkCfg = vkSection.Get<VkontakteConfiguration>();
+
+        if (vkCfg?.ClientId != null && vkCfg.ClientSecret != null)
+        {
+            services.AddAuthentication()
+                .AddVkontakte("VK", options =>
+                {
+                    options.ClientId = vkCfg.ClientId;
+                    options.ClientSecret = vkCfg.ClientSecret;
+                    options.Scope.Add("email");
+                });
+        }
+
+        // Yandex OAuth
+        var yandexSection = Configuration.GetSection("Yandex");
+        var yandexCfg = yandexSection.Get<YandexConfiguration>();
+
+        if (yandexCfg?.ClientId != null && yandexCfg.ClientSecret != null)
+        {
+            services.AddAuthentication()
+                .AddYandex("Yandex", options =>
+                {
+                    options.ClientId = yandexCfg.ClientId;
+                    options.ClientSecret = yandexCfg.ClientSecret;
+                    options.Scope.Add("login:birthday");
+                    options.Events.OnCreatingTicket = context =>
+                    {
+                        if (context.User.TryGetProperty("birthday", out var birthdayEl))
+                        {
+                            var birthday = birthdayEl.GetString();
+                            if (!string.IsNullOrEmpty(birthday))
+                            {
+                                context.Identity?.AddClaim(new Claim(ClaimTypes.DateOfBirth, birthday));
+                            }
+                        }
+                        return Task.CompletedTask;
                     };
                 });
         }

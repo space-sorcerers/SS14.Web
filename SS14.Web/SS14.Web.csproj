@@ -10,6 +10,12 @@
         <PackageReference Include="IdentityServer4.EntityFramework" Version="4.1.2" />
         <PackageReference Include="IdentityServer4.AspNetIdentity" Version="4.1.2" />
         <PackageReference Include="AspNet.Security.OAuth.Patreon" Version="6.0.2" />
+        <PackageReference Include="AspNet.Security.OAuth.Vkontakte" Version="6.0.2" />
+        <PackageReference Include="AspNet.Security.OAuth.Yandex" Version="6.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.36">
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+          <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="6.0.0" />
         <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.1.0" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.1" Condition="'$(Configuration)' == 'Debug'" />
@@ -24,5 +30,11 @@
     
     <ItemGroup>
       <_ContentIncludedByDefault Remove="Areas\Admin\Pages\Servers\BannedAddresses\Index.cshtml" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <None Update="appsettings*.yml">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 </Project>
