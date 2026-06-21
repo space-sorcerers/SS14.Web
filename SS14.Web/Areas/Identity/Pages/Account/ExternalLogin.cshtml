@@ -47,9 +47,10 @@
                 }
                 else
                 {
-                    <input asp-for="Input.Email" type="hidden" />
-                    <div class="alert alert-info mt-3">
-                        <strong>Email:</strong> @Model.Input.Email
+                    <div class="form-group">
+                        <label asp-for="Input.Email">Email</label>
+                        <input asp-for="Input.Email" class="form-control" readonly />
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
                     </div>
                 }
                 

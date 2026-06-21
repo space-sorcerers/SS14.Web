@@ -63,6 +63,7 @@ public class ExternalLoginModel : PageModel
 
     public bool ShowVerifyCode { get; set; }
 
+    [BindProperty]
     public string PendingRef { get; set; }
 
     public class InputModel
@@ -150,7 +151,7 @@ public class ExternalLoginModel : PageModel
 
             // Make email editable only if it's not a Yandex-provided email
             // Yandex users who log in via Google won't have @yandex.ru email
-            EmailEditable = string.IsNullOrEmpty(email) || !email.Contains("@yandex", StringComparison.OrdinalIgnoreCase);
+            EmailEditable = string.IsNullOrEmpty(email) || !IsYandexEmail(email);
 
             // Pre-check birthday to show setup link immediately if needed
             var initialBirthday = ExtractBirthdayFromClaims(info.Principal);
@@ -373,6 +374,21 @@ public class ExternalLoginModel : PageModel
         var age = today.Year - birthday.Year;
         if (birthday.Date > today.AddYears(-age)) age--;
         return age;
+    }
+
+    private static bool IsYandexEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+            return false;
+
+        var domain = email.Split('@')[1].ToLowerInvariant();
+        return domain == "yandex.ru"
+            || domain == "ya.ru"
+            || domain == "yandex.ua"
+            || domain == "yandex.by"
+            || domain == "yandex.kz"
+            || domain == "yandex.com"
+            || domain.EndsWith(".yandex.ru");
     }
 
     private async Task<string> GenerateUniqueUsername(ExternalLoginInfo info)
