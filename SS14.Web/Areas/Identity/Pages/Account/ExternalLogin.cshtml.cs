@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Security.Claims;
@@ -21,6 +22,8 @@ namespace SS14.Web.Areas.Identity.Pages.Account;
 [AllowAnonymous]
 public class ExternalLoginModel : PageModel
 {
+    private static readonly ConcurrentDictionary<string, PendingRegistration> _pendingRegistrations = new();
+
     private readonly SignInManager<SpaceUser> _signInManager;
     private readonly UserManager<SpaceUser> _userManager;
     private readonly IEmailSender _emailSender;
@@ -56,6 +59,12 @@ public class ExternalLoginModel : PageModel
 
     public bool ShowBirthdayHelp { get; set; }
 
+    public bool EmailEditable { get; set; }
+
+    public bool ShowVerifyCode { get; set; }
+
+    public string PendingRef { get; set; }
+
     public class InputModel
     {
         [Required]
@@ -66,7 +75,18 @@ public class ExternalLoginModel : PageModel
         [StringLength(32, MinimumLength = 3)]
         [RegularExpression(@"^[a-zA-Z0-9_-]+$", ErrorMessage = "Username can only contain letters, numbers, underscores and hyphens.")]
         public string UserName { get; set; }
+
+        public string VerificationCode { get; set; }
     }
+
+    private sealed record PendingRegistration(
+        string Email,
+        string UserName,
+        DateTime Birthday,
+        string Provider,
+        string ProviderKey,
+        string Code,
+        DateTime ExpiresAt);
 
     public IActionResult OnGetAsync()
     {
@@ -128,6 +148,10 @@ public class ExternalLoginModel : PageModel
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             var suggestedUsername = await GenerateUniqueUsername(info);
 
+            // Make email editable only if it's not a Yandex-provided email
+            // Yandex users who log in via Google won't have @yandex.ru email
+            EmailEditable = string.IsNullOrEmpty(email) || !email.Contains("@yandex", StringComparison.OrdinalIgnoreCase);
+
             // Pre-check birthday to show setup link immediately if needed
             var initialBirthday = ExtractBirthdayFromClaims(info.Principal);
             ShowBirthdayHelp = !initialBirthday.HasValue;
@@ -145,7 +169,6 @@ public class ExternalLoginModel : PageModel
     public async Task<IActionResult> OnPostConfirmationAsync(string returnUrl = null)
     {
         returnUrl = returnUrl ?? Url.Content("~/");
-        // Get the information about the user from the external login provider
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info == null)
         {
@@ -153,82 +176,140 @@ public class ExternalLoginModel : PageModel
             return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
         }
 
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            // Check if username is already taken
-            var existingUser = await _userManager.FindByNameAsync(Input.UserName);
-            if (existingUser != null)
-            {
-                ModelState.AddModelError(string.Empty, "Username is already taken.");
-                ProviderDisplayName = info.ProviderDisplayName;
-                ReturnUrl = returnUrl;
-                return Page();
-            }
+            ProviderDisplayName = info.ProviderDisplayName;
+            ReturnUrl = returnUrl;
+            return Page();
+        }
 
-            // Extract birthday from provider claims
-            var birthday = ExtractBirthdayFromClaims(info.Principal);
-            if (!birthday.HasValue)
-            {
-                ShowBirthdayHelp = true;
-                ShowBirthdayHelp = true;
-                ModelState.AddModelError(string.Empty, "Could not retrieve date of birth from provider. Please ensure your profile has a valid birthday set.");
-                ProviderDisplayName = info.ProviderDisplayName;
-                ReturnUrl = returnUrl;
-                return Page();
-            }
+        // Check if username is already taken
+        var existingUser = await _userManager.FindByNameAsync(Input.UserName);
+        if (existingUser != null)
+        {
+            ModelState.AddModelError(string.Empty, "Username is already taken.");
+            ProviderDisplayName = info.ProviderDisplayName;
+            ReturnUrl = returnUrl;
+            return Page();
+        }
 
-            // Check age requirement (must be 13 or older)
-            var age = CalculateAge(birthday.Value);
-            if (age < 13)
-            {
-                ModelState.AddModelError(string.Empty, "You must be at least 13 years old to register.");
-                ProviderDisplayName = info.ProviderDisplayName;
-                ReturnUrl = returnUrl;
-                return Page();
-            }
+        // Extract birthday from provider claims
+        var birthday = ExtractBirthdayFromClaims(info.Principal);
+        if (!birthday.HasValue)
+        {
+            ShowBirthdayHelp = true;
+            ModelState.AddModelError(string.Empty, "Could not retrieve date of birth from provider. Please ensure your profile has a valid birthday set.");
+            ProviderDisplayName = info.ProviderDisplayName;
+            ReturnUrl = returnUrl;
+            return Page();
+        }
 
-            // Cap age at 18 for users 18 and older
-            var storedBirthday = birthday.Value;
-            if (age >= 18)
-            {
-                storedBirthday = DateTime.UtcNow.AddYears(-18);
-            }
+        // Check age requirement (must be 13 or older)
+        var age = CalculateAge(birthday.Value);
+        if (age < 13)
+        {
+            ModelState.AddModelError(string.Empty, "You must be at least 13 years old to register.");
+            ProviderDisplayName = info.ProviderDisplayName;
+            ReturnUrl = returnUrl;
+            return Page();
+        }
 
-            var user = new SpaceUser 
-            { 
-                UserName = Input.UserName, 
-                Email = Input.Email,
-                Birthday = storedBirthday,
-                EmailConfirmed = true,
-                CreatedTime = DateTimeOffset.UtcNow
-            };
+        // Cap age at 18 for users 18 and older
+        var storedBirthday = birthday.Value;
+        if (age >= 18)
+        {
+            storedBirthday = DateTime.UtcNow.AddYears(-18);
+        }
 
-            var result = await _userManager.CreateAsync(user);
+        // Generate and send verification code
+        var code = new Random().Next(100000, 999999).ToString();
+        var refId = Guid.NewGuid().ToString("N");
+
+        _pendingRegistrations[refId] = new PendingRegistration(
+            Input.Email,
+            Input.UserName,
+            storedBirthday,
+            info.LoginProvider,
+            info.ProviderKey,
+            code,
+            DateTime.UtcNow.AddMinutes(10));
+
+        // Send code via email
+        var subject = "Your Space Station 14 verification code";
+        var htmlMessage = $@"
+            <h2>Email Verification</h2>
+            <p>Your verification code is: <strong style='font-size: 24px;'>{code}</strong></p>
+            <p>This code will expire in 10 minutes.</p>";
+
+        await _emailSender.SendEmailAsync(Input.Email, subject, htmlMessage);
+
+        ProviderDisplayName = info.ProviderDisplayName;
+        ReturnUrl = returnUrl;
+        PendingRef = refId;
+        ShowVerifyCode = true;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostVerifyCodeAsync(string returnUrl = null)
+    {
+        returnUrl = returnUrl ?? Url.Content("~/");
+
+        if (string.IsNullOrEmpty(PendingRef) || !_pendingRegistrations.TryRemove(PendingRef, out var pending))
+        {
+            ErrorMessage = "Verification session expired. Please try again.";
+            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+        }
+
+        if (pending.ExpiresAt < DateTime.UtcNow)
+        {
+            ErrorMessage = "Verification code expired. Please try again.";
+            return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+        }
+
+        if (Input.VerificationCode != pending.Code)
+        {
+            ModelState.AddModelError("Input.VerificationCode", "Invalid verification code.");
+            ProviderDisplayName = pending.Provider;
+            ReturnUrl = returnUrl;
+            PendingRef = PendingRef;
+            ShowVerifyCode = true;
+            return Page();
+        }
+
+        var user = new SpaceUser 
+        { 
+            UserName = pending.UserName, 
+            Email = pending.Email,
+            Birthday = pending.Birthday,
+            EmailConfirmed = true,
+            CreatedTime = DateTimeOffset.UtcNow
+        };
+
+        var result = await _userManager.CreateAsync(user);
+        if (result.Succeeded)
+        {
+            result = await _userManager.AddLoginAsync(user, new UserLoginInfo(pending.Provider, pending.ProviderKey, pending.Provider));
             if (result.Succeeded)
             {
-                result = await _userManager.AddLoginAsync(user, info);
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                _logger.LogInformation("User created an account using {Name} provider.", pending.Provider);
 
-                    // Log account creation
-                    await _accountLogManager.LogAndSave(
-                        user,
-                        new AccountLogCreated(),
-                        _accountLogManager.ActorWithIP(user));
+                await _accountLogManager.LogAndSave(
+                    user,
+                    new AccountLogCreated(),
+                    _accountLogManager.ActorWithIP(user));
 
-                    await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+                await _signInManager.SignInAsync(user, isPersistent: false, pending.Provider);
 
-                    return LocalRedirect(returnUrl);
-                }
-            }
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
+                return LocalRedirect(returnUrl);
             }
         }
 
-        ProviderDisplayName = info.ProviderDisplayName;
+        foreach (var error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error.Description);
+        }
+
+        ProviderDisplayName = pending.Provider;
         ReturnUrl = returnUrl;
         return Page();
     }
