@@ -9,7 +9,7 @@ import requests
 import json
 from typing import TypedDict, Any
 
-HUB_URL = "https://central.spacestation14.io/hub/"
+HUB_URL = "https://central.ss14.art/hub/"
 
 class ServerEntry(TypedDict):
     address: str

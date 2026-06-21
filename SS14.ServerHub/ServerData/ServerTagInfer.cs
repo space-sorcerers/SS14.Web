@@ -41,13 +41,6 @@ public static partial class ServerTagInfer
             }
         }
 
-        // Infer 18+
-        if (!currentTags.Contains(Tags.TagEighteenPlus))
-        {
-            if (tagLikes.Contains("18+") || tagLikes.Contains("+18") || tagLikes.Contains("18") || tagLikes.Contains("ERP"))
-                addedTags.Add(Tags.TagEighteenPlus);
-        }
-
         // Infer NRP/LRP/MRP/HRP if no RP tags.
         if (!currentTags.Any(t => t.StartsWith(Tags.TagRolePlay, StringComparison.OrdinalIgnoreCase)))
         {

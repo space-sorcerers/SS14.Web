@@ -34,6 +34,11 @@ public class ForgotPasswordModel : PageModel
         public string Email { get; set; }
     }
 
+    public IActionResult OnGet()
+    {
+        return RedirectToPage("./Login");
+    }
+
     public async Task<IActionResult> OnPostAsync()
     {
         if (ModelState.IsValid)

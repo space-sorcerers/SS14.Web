@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,64 @@ public class AuthApiController : ControllerBase
         _emailSender = emailSender;
         _systemClock = systemClock;
         _cfg = cfg;
+    }
+
+    /// <summary>
+    /// Returns available authentication methods for the launcher.
+    /// </summary>
+    [HttpGet("methods")]
+    public IActionResult GetAuthMethods()
+    {
+        var methods = new List<string> { "legacy" };
+
+        var yandexId = _cfg.GetValue<string>("Yandex:ClientId");
+        var vkId = _cfg.GetValue<string>("Vkontakte:ClientId");
+
+        if (!string.IsNullOrEmpty(yandexId))
+            methods.Add("yandex");
+
+        if (!string.IsNullOrEmpty(vkId))
+            methods.Add("vkontakte");
+
+        return Ok(new { methods });
+    }
+
+    /// <summary>
+    /// Exchange an SSO auth code for a session token.
+    /// </summary>
+    [HttpPost("sso")]
+    public async Task<IActionResult> SsoLogin(SsoLoginRequest request)
+    {
+        if (!SsoCodeStore.Codes.TryGetValue(request.Code, out var ssoData) || ssoData.Expires < DateTime.UtcNow)
+        {
+            return Unauthorized(new AuthenticateDenyResponse(
+                new[] { "Invalid or expired SSO code." },
+                AuthenticateDenyResponseCode.InvalidCredentials));
+        }
+
+        SsoCodeStore.Codes.TryRemove(request.Code, out _);
+
+        var user = await _userManager.FindByIdAsync(ssoData.UserId.ToString());
+        if (user == null)
+        {
+            return Unauthorized(new AuthenticateDenyResponse(
+                new[] { "User not found." },
+                AuthenticateDenyResponseCode.InvalidCredentials));
+        }
+
+        if (user.AdminLocked)
+        {
+            return Unauthorized(new AuthenticateDenyResponse(
+                new[] { "Account locked by administrator." },
+                AuthenticateDenyResponseCode.AccountLocked));
+        }
+
+        var isAdult = CalculateIsAdult(user.Birthday);
+
+        var (token, expireTime) =
+            await _sessionManager.RegisterNewSession(user, SessionManager.DefaultExpireTime);
+
+        return Ok(new AuthenticateResponse(token.AsBase64, user.UserName!, user.Id, expireTime, isAdult));
     }
 
     [HttpPost("authenticate")]
@@ -147,10 +206,26 @@ public class AuthApiController : ControllerBase
             // 2FA passed, we're good.
         }
         
+        var isAdult = CalculateIsAdult(user.Birthday);
+
         var (token, expireTime) =
             await _sessionManager.RegisterNewSession(user, SessionManager.DefaultExpireTime);
 
-        return Ok(new AuthenticateResponse(token.AsBase64, user.UserName!, user.Id, expireTime));
+        return Ok(new AuthenticateResponse(token.AsBase64, user.UserName!, user.Id, expireTime, isAdult));
+    }
+
+    private static bool CalculateIsAdult(DateTime birthday)
+    {
+        // Legacy users with unset birthday are considered adult
+        if (birthday == new DateTime(1000, 1, 1))
+            return true;
+
+        var today = DateTime.UtcNow;
+        var age = today.Year - birthday.Year;
+        if (birthday.Date > today.AddYears(-age))
+            age--;
+
+        return age >= 18;
     }
 
     // Launcher registration disabled due to spam risk.
@@ -280,7 +355,7 @@ public sealed record AuthenticateRequest(
     string Password,
     string? TfaCode = null);
 
-public sealed record AuthenticateResponse(string Token, string Username, Guid UserId, DateTimeOffset ExpireTime)
+public sealed record AuthenticateResponse(string Token, string Username, Guid UserId, DateTimeOffset ExpireTime, bool IsAdult)
 {
 }
 
@@ -336,3 +411,5 @@ public enum RegisterResponseStatus
     Registered,
     RegisteredNeedConfirmation
 }
+
+public sealed record SsoLoginRequest(string Code);

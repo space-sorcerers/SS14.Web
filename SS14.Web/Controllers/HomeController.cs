@@ -21,12 +21,12 @@ public class HomeController : Controller
 
     public IActionResult Privacy()
     {
-        return Redirect("https://playss14.com/about/privacy/");
+        return Redirect("https://ss14.art/privacy");
     }
 
     public IActionResult Contact()
     {
-        return Redirect("https://playss14.com/about/contact/");
+        return Redirect("https://ss14.art/#:~:text=%D0%9E%D1%82%D0%BC%D0%B5%D0%BD%D0%B0%20%D0%BF%D0%BE%D0%B4%D0%BF%D0%B8%D1%81%D0%BA%D0%B8-,%D0%9A%D0%9E%D0%9D%D0%A2%D0%90%D0%9A%D0%A2%D0%AB,-%D0%9F%D0%BE%D1%87%D1%82%D0%B0%3A%20support");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -37,6 +37,6 @@ public class HomeController : Controller
 
     public IActionResult MainWebsite()
     {
-        return Redirect("https://playss14.com/");
+        return Redirect("https://ss14.art/");
     }
 }
