@@ -1,0 +1,16 @@
+{
+  "Messages": {
+    "en-US": [
+      "Welcome to Space Station 14!",
+      "Report bugs on GitHub: https://github.com/space-sorcerers/SS14.Launcher/issues"
+    ],
+    "ru": [
+      "Добро пожаловать в Space Station 14!",
+      "Сообщайте об ошибках на GitHub: https://github.com/space-sorcerers/SS14.Launcher/issues"
+    ]
+  },
+  "AllowedVersions": [
+    "63"
+  ],
+  "OverrideAssets": {}
+}
