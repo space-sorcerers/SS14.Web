@@ -155,9 +155,19 @@ public class Startup
                 {
                     options.ClientId = yandexCfg.ClientId;
                     options.ClientSecret = yandexCfg.ClientSecret;
+                    options.Scope.Add("login:email");
                     options.Scope.Add("login:birthday");
+                    options.ClaimActions.MapJsonKey("urn:yandex:email", "default_email");
                     options.Events.OnCreatingTicket = context =>
                     {
+                        if (context.User.TryGetProperty("default_email", out var emailEl))
+                        {
+                            var email = emailEl.GetString();
+                            if (!string.IsNullOrEmpty(email))
+                            {
+                                context.Identity?.AddClaim(new Claim(ClaimTypes.Email, email));
+                            }
+                        }
                         if (context.User.TryGetProperty("birthday", out var birthdayEl))
                         {
                             var birthday = birthdayEl.GetString();
