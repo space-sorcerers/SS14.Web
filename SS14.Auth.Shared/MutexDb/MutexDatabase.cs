@@ -27,6 +27,10 @@ public sealed class MutexDatabase : IDisposable
     {
         _connection ??= OpenConnection();
 
+        // Auto-create table if it doesn't exist
+        _connection.Execute(
+            "CREATE TABLE IF NOT EXISTS MutexCounts (Key TEXT PRIMARY KEY NOT NULL, Count INTEGER NOT NULL) WITHOUT ROWID");
+
         using var tx = _connection.BeginTransaction(deferred: false);
 
         var count = _connection.QuerySingleOrDefault<int>(
@@ -45,11 +49,18 @@ public sealed class MutexDatabase : IDisposable
         
         return count;
     }
+
+    public void EnsureCreated()
+    {
+        _connection ??= OpenConnection();
+        _connection.Execute(
+            "CREATE TABLE IF NOT EXISTS MutexCounts (Key TEXT PRIMARY KEY NOT NULL, Count INTEGER NOT NULL) WITHOUT ROWID");
+    }
     
     private SqliteConnection OpenConnection()
     {
         var options = _options.Value;
-        var conString = $"Data Source={options.DbPath};Mode=ReadWrite;Pooling=True;Foreign Keys=True";
+        var conString = $"Data Source={options.DbPath};Mode=ReadWriteCreate;Pooling=True;Foreign Keys=True";
 
         var con = new SqliteConnection(conString);
         con.Open();

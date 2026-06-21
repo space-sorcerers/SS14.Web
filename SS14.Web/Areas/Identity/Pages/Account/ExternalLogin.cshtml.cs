@@ -236,13 +236,20 @@ public class ExternalLoginModel : PageModel
             DateTime.UtcNow.AddMinutes(10));
 
         // Send code via email
-        var subject = "Your Space Station 14 verification code";
-        var htmlMessage = $@"
-            <h2>Email Verification</h2>
-            <p>Your verification code is: <strong style='font-size: 24px;'>{code}</strong></p>
-            <p>This code will expire in 10 minutes.</p>";
+        try
+        {
+            var subject = "Your Space Station 14 verification code";
+            var htmlMessage = $@"
+                <h2>Email Verification</h2>
+                <p>Your verification code is: <strong style='font-size: 24px;'>{code}</strong></p>
+                <p>This code will expire in 10 minutes.</p>";
 
-        await _emailSender.SendEmailAsync(Input.Email, subject, htmlMessage);
+            await _emailSender.SendEmailAsync(Input.Email, subject, htmlMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send verification code to {Email}", Input.Email);
+        }
 
         ProviderDisplayName = info.ProviderDisplayName;
         ReturnUrl = returnUrl;
