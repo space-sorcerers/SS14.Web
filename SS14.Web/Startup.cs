@@ -157,7 +157,6 @@ public class Startup
                     options.ClientSecret = yandexCfg.ClientSecret;
                     options.Scope.Add("login:email");
                     options.Scope.Add("login:birthday");
-                    options.ClaimActions.MapJsonKey("urn:yandex:email", "default_email");
                     options.Events.OnCreatingTicket = context =>
                     {
                         if (context.User.TryGetProperty("default_email", out var emailEl))
